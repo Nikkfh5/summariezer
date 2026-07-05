@@ -51,14 +51,31 @@ Output channel:
 - default: local Markdown files under `runs/.../digest.md`;
 - optional: Telegram DM/channel via a separate BotFather bot using
   `TELEGRAM_BOT_TOKEN` and `TELEGRAM_DELIVERY_CHAT_ID`.
+- optional fallback: Telegram user-session delivery via `TELEGRAM_DELIVERY_PEER`.
 
 For Telegram ingestion and optional delivery:
 
 ```bash
 python3 -m pip install -e '.[telegram]'
+export TELEGRAM_API_ID='...'
 export TELEGRAM_API_HASH='...'
 export TELEGRAM_BOT_TOKEN='...'                 # optional delivery
 export TELEGRAM_DELIVERY_CHAT_ID='...'          # optional delivery
+```
+
+Authorize the reader account once before using private chats:
+
+```bash
+python3 -m summariezer.cli --config configs/example.toml login-telegram \
+  --session secrets/tg-reader \
+  --api-id "$TELEGRAM_API_ID"
+```
+
+After sending `/start` to the delivery bot from the target account, get the
+delivery chat id:
+
+```bash
+python3 -m summariezer.cli --config configs/example.toml telegram-bot-updates
 ```
 
 ## Ingest JSONL
@@ -132,6 +149,29 @@ Deliver an already generated digest:
 python3 -m summariezer.cli --config configs/example.toml deliver-telegram \
   --file runs/<run-id>/digest.md
 ```
+
+Deliver through the Telegram reader user session instead of Bot API:
+
+```bash
+export TELEGRAM_DELIVERY_PEER='@main_account'
+
+python3 -m summariezer.cli --config configs/example.toml deliver-telegram-user \
+  --file runs/<run-id>/digest.md \
+  --session secrets/tg-reader
+```
+
+## Server deployment
+
+The repo includes deployment templates:
+
+- `deploy/summariezer.env.example` -> `/etc/summariezer/summariezer.env`
+- `deploy/systemd/summariezer-digest.service`
+- `deploy/systemd/summariezer-digest.timer`
+- `scripts/run_digest_window.sh`
+
+The timer runs every 3 days and uses the last `SUMMARIEZER_WINDOW_DAYS` days as
+the digest window. Secrets belong only in `/etc/summariezer/summariezer.env` on
+the server with mode `600`.
 
 The runner uses:
 
