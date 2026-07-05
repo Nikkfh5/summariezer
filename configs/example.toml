@@ -1,0 +1,67 @@
+[storage]
+database_path = "../data/messages.sqlite3"
+runs_dir = "../runs"
+
+[digest]
+# Leaves room for instructions, links, and the model's answer.
+max_chunk_tokens = 45000
+
+[codex]
+executable = "codex"
+# Leave unset to use the local Codex default. Uncomment if you want to pin it.
+# model = "gpt-5"
+work_dir = ".."
+ephemeral = true
+sandbox = "read-only"
+ask_for_approval = "never"
+# Codex CLI on this machine does not expose a documented temperature flag in
+# `codex exec --help`. Keep provider-specific overrides here after verifying
+# them locally.
+extra_args = []
+
+[profiles.hft]
+language = "ru"
+audience = "User wants a dense digest of a noisy Telegram chat, with HFT and market microstructure above generic crypto chatter."
+priorities = [
+  "HFT, market microstructure, order book dynamics, latency, execution quality",
+  "Market data, exchange infrastructure, matching engines, colocation, connectivity, APIs",
+  "Quant or research ideas that can be checked, measured, or backtested",
+  "Crypto only when it changes trading edge, execution, liquidity, microstructure, or infrastructure",
+  "Generic price talk, hype, memes, and unverifiable opinions are low priority"
+]
+low_priority = [
+  "Directional price chatter without a testable mechanism",
+  "Memes, vibes, social drama, and one-line reactions",
+  "Confident claims without data, source links, or a measurable implication"
+]
+output_sections = [
+  "Main HFT and microstructure signals",
+  "Infrastructure, venues, data, latency, and execution notes",
+  "Research ideas or claims worth checking",
+  "Crypto items only if relevant to trading edge",
+  "Noise, weak claims, and uncertainty",
+  "What to verify or calculate next"
+]
+
+[profiles.generic]
+language = "ru"
+audience = "User wants a readable digest of a noisy chat with source links and uncertainty labels."
+priorities = [
+  "Important decisions, factual updates, and concrete claims",
+  "Technical details, operational changes, and useful resources",
+  "Repeated themes that changed since the previous window",
+  "Disagreements where both sides have evidence",
+  "Low-information chatter is low priority"
+]
+low_priority = [
+  "Small talk",
+  "Repeated jokes",
+  "Unverifiable hype"
+]
+output_sections = [
+  "Main updates",
+  "Technical or operational details",
+  "Open questions",
+  "Claims to verify",
+  "Source links"
+]

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "summariezer"
+version = "0.1.0"
+description = "Universal chat digest tooling with Codex CLI summarization."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+telegram = ["telethon>=1.36"]
+
+[project.scripts]
+summariezer = "summariezer.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["summariezer*"]
