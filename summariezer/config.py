@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
 
 from .models import AppConfig, CodexSettings, DigestProfile
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 
 def load_config(path: Path | str) -> AppConfig:
