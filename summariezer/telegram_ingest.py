@@ -27,7 +27,11 @@ async def fetch_telegram_messages(
     session_path.parent.mkdir(parents=True, exist_ok=True)
     messages: list[Message] = []
     async with TelegramClient(str(session_path), api_id, api_hash) as client:
-        async for item in client.iter_messages(chat, offset_date=end, reverse=True):
+        async for item in client.iter_messages(
+            _coerce_chat_ref(chat),
+            offset_date=end,
+            reverse=True,
+        ):
             if item.date is None:
                 continue
             if item.date < start:
@@ -56,4 +60,15 @@ def _telegram_url(chat: str, message_id: int) -> str | None:
         return f"{chat.rstrip('/')}/{message_id}"
     if chat.startswith("@"):
         return f"https://t.me/{chat[1:]}/{message_id}"
+    if chat.startswith("-100") and chat[4:].isdigit():
+        return f"https://t.me/c/{chat[4:]}/{message_id}"
     return None
+
+
+def _coerce_chat_ref(chat: str) -> str | int:
+    stripped = chat.strip()
+    if stripped.startswith("-") and stripped[1:].isdigit():
+        return int(stripped)
+    if stripped.isdigit():
+        return int(stripped)
+    return chat
