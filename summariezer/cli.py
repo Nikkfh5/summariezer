@@ -9,6 +9,7 @@ from pathlib import Path
 from .chunking import chunk_messages
 from .codex_runner import CodexRunner
 from .config import load_config
+from .delivery import send_telegram_digest
 from .jsonl_ingest import load_jsonl_messages
 from .prompting import build_digest_prompt
 from .storage import MessageStore
@@ -42,6 +43,14 @@ def main(argv: list[str] | None = None) -> int:
     digest.add_argument("--end", required=True)
     digest.add_argument("--dry-run", action="store_true")
     digest.add_argument("--discard-prompts", action="store_true")
+    digest.add_argument("--deliver-telegram", action="store_true")
+    digest.add_argument("--telegram-bot-token-env", default="TELEGRAM_BOT_TOKEN")
+    digest.add_argument("--telegram-chat-id-env", default="TELEGRAM_DELIVERY_CHAT_ID")
+
+    deliver_tg = subparsers.add_parser("deliver-telegram")
+    deliver_tg.add_argument("--file", required=True)
+    deliver_tg.add_argument("--bot-token-env", default="TELEGRAM_BOT_TOKEN")
+    deliver_tg.add_argument("--chat-id-env", default="TELEGRAM_DELIVERY_CHAT_ID")
 
     args = parser.parse_args(argv)
     config = load_config(args.config)
@@ -77,6 +86,13 @@ def main(argv: list[str] | None = None) -> int:
         count = store.upsert_messages(messages)
         print(f"upserted {count} telegram messages into {config.database_path}")
         return 0
+
+    if args.command == "deliver-telegram":
+        return _deliver_telegram_from_file(
+            file_path=Path(args.file),
+            bot_token_env=args.bot_token_env,
+            chat_id_env=args.chat_id_env,
+        )
 
     if args.command == "digest":
         profile = config.profiles[args.profile]
@@ -117,6 +133,12 @@ def main(argv: list[str] | None = None) -> int:
             final_path = run_dir / "digest.md"
             final_path.write_text(summary_paths[0].read_text(encoding="utf-8"), encoding="utf-8")
             print(f"wrote {final_path}")
+            if args.deliver_telegram:
+                return _deliver_telegram_from_file(
+                    file_path=final_path,
+                    bot_token_env=args.telegram_bot_token_env,
+                    chat_id_env=args.telegram_chat_id_env,
+                )
             return 0
 
         from .prompting import build_merge_prompt
@@ -138,6 +160,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.discard_prompts:
             merge_prompt_path.unlink(missing_ok=True)
         print(f"wrote {merge_output_path}")
+        if args.deliver_telegram:
+            return _deliver_telegram_from_file(
+                file_path=merge_output_path,
+                bot_token_env=args.telegram_bot_token_env,
+                chat_id_env=args.telegram_chat_id_env,
+            )
         return 0
 
     parser.error(f"unknown command: {args.command}")
@@ -147,6 +175,29 @@ def main(argv: list[str] | None = None) -> int:
 def _run_slug(source: str, profile: str, start: str, end: str) -> str:
     raw = f"{source}_{profile}_{start}_{end}"
     return "".join(char if char.isalnum() or char in "._-" else "-" for char in raw)
+
+
+def _deliver_telegram_from_file(
+    *,
+    file_path: Path,
+    bot_token_env: str,
+    chat_id_env: str,
+) -> int:
+    bot_token = os.environ.get(bot_token_env)
+    chat_id = os.environ.get(chat_id_env)
+    if not bot_token:
+        print(f"missing Telegram bot token env var: {bot_token_env}")
+        return 2
+    if not chat_id:
+        print(f"missing Telegram delivery chat id env var: {chat_id_env}")
+        return 2
+    sent = send_telegram_digest(
+        bot_token=bot_token,
+        chat_id=chat_id,
+        text=file_path.read_text(encoding="utf-8"),
+    )
+    print(f"sent {sent} telegram message(s) from {file_path}")
+    return 0
 
 
 if __name__ == "__main__":

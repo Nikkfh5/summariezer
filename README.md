@@ -34,11 +34,31 @@ python3 -m unittest discover -s tests
 python3 -m summariezer.cli --config configs/example.toml init-db
 ```
 
-For Telegram ingestion:
+## What to fill in
+
+Minimal fields for the first real Telegram run:
+
+- `--source`: local source name, for example `hft_chat`.
+- `--chat`: Telegram chat username/link/id, for example `@some_chat`.
+- `--session`: local reader-account session path, usually `secrets/tg-reader`.
+- `--api-id`: numeric API id from `https://my.telegram.org/apps`.
+- `TELEGRAM_API_HASH`: API hash from the same page, exported as an environment variable.
+- `--profile`: `hft` for the HFT-first digest, or `generic` for general chats.
+- `--start` / `--end`: digest window.
+
+Output channel:
+
+- default: local Markdown files under `runs/.../digest.md`;
+- optional: Telegram DM/channel via a separate BotFather bot using
+  `TELEGRAM_BOT_TOKEN` and `TELEGRAM_DELIVERY_CHAT_ID`.
+
+For Telegram ingestion and optional delivery:
 
 ```bash
 python3 -m pip install -e '.[telegram]'
 export TELEGRAM_API_HASH='...'
+export TELEGRAM_BOT_TOKEN='...'                 # optional delivery
+export TELEGRAM_DELIVERY_CHAT_ID='...'          # optional delivery
 ```
 
 ## Ingest JSONL
@@ -92,6 +112,25 @@ python3 -m summariezer.cli --config configs/example.toml digest \
   --profile hft \
   --start 2026-07-02T00:00:00+03:00 \
   --end 2026-07-05T00:00:00+03:00
+```
+
+Run Codex and deliver the final digest to Telegram:
+
+```bash
+python3 -m summariezer.cli --config configs/example.toml digest \
+  --source hft_chat \
+  --profile hft \
+  --start 2026-07-02T00:00:00+03:00 \
+  --end 2026-07-05T00:00:00+03:00 \
+  --deliver-telegram \
+  --discard-prompts
+```
+
+Deliver an already generated digest:
+
+```bash
+python3 -m summariezer.cli --config configs/example.toml deliver-telegram \
+  --file runs/<run-id>/digest.md
 ```
 
 The runner uses:
