@@ -2,6 +2,7 @@
 set -euo pipefail
 
 CONFIG="${SUMMARIEZER_CONFIG:-/opt/summariezer/app/configs/example.toml}"
+PYTHON="${SUMMARIEZER_PYTHON:-/opt/summariezer/venv/bin/python}"
 SOURCE="${SUMMARIEZER_SOURCE:?SUMMARIEZER_SOURCE is required}"
 CHAT="${SUMMARIEZER_CHAT:?SUMMARIEZER_CHAT is required}"
 SESSION="${SUMMARIEZER_SESSION:-/opt/summariezer/secrets/tg-reader}"
@@ -9,7 +10,7 @@ PROFILE="${SUMMARIEZER_PROFILE:-hft}"
 WINDOW_DAYS="${SUMMARIEZER_WINDOW_DAYS:-3}"
 API_ID="${TELEGRAM_API_ID:?TELEGRAM_API_ID is required}"
 
-read -r START END < <(python3 - "$WINDOW_DAYS" <<'PY'
+read -r START END < <("$PYTHON" - "$WINDOW_DAYS" <<'PY'
 from datetime import datetime, timedelta, timezone
 import sys
 
@@ -20,7 +21,7 @@ print(start.isoformat(), end.isoformat())
 PY
 )
 
-python3 -m summariezer.cli --config "$CONFIG" ingest-telegram \
+"$PYTHON" -m summariezer.cli --config "$CONFIG" ingest-telegram \
   --source "$SOURCE" \
   --chat "$CHAT" \
   --session "$SESSION" \
@@ -38,7 +39,7 @@ if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_DELIVERY_CHAT_ID:-}" ]]; th
   fi
 fi
 
-python3 -m summariezer.cli --config "$CONFIG" digest \
+"$PYTHON" -m summariezer.cli --config "$CONFIG" digest \
   --source "$SOURCE" \
   --profile "$PROFILE" \
   --start "$START" \

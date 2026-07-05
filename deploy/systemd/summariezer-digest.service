@@ -8,5 +8,6 @@ Type=oneshot
 User=root
 Group=root
 EnvironmentFile=/etc/summariezer/summariezer.env
+Environment=PATH=/opt/summariezer/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 WorkingDirectory=/opt/summariezer/app
 ExecStart=/bin/bash /opt/summariezer/app/scripts/run_digest_window.sh
