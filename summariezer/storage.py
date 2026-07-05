@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections.abc import Iterable
+from contextlib import closing
 from pathlib import Path
 
 from .models import Message
@@ -14,27 +15,28 @@ class MessageStore:
 
     def initialize(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as connection:
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS messages (
-                    source TEXT NOT NULL,
-                    message_id TEXT NOT NULL,
-                    date TEXT NOT NULL,
-                    author TEXT NOT NULL,
-                    text TEXT NOT NULL,
-                    url TEXT,
-                    reply_to TEXT,
-                    metadata_json TEXT NOT NULL DEFAULT '{}',
-                    inserted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (source, message_id)
+        with closing(self._connect()) as connection:
+            with connection:
+                connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS messages (
+                        source TEXT NOT NULL,
+                        message_id TEXT NOT NULL,
+                        date TEXT NOT NULL,
+                        author TEXT NOT NULL,
+                        text TEXT NOT NULL,
+                        url TEXT,
+                        reply_to TEXT,
+                        metadata_json TEXT NOT NULL DEFAULT '{}',
+                        inserted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (source, message_id)
+                    )
+                    """
                 )
-                """
-            )
-            connection.execute(
-                "CREATE INDEX IF NOT EXISTS idx_messages_source_date ON messages (source, date)"
-            )
+                connection.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_messages_source_date ON messages (source, date)"
+                )
 
     def upsert_messages(self, messages: Iterable[Message]) -> int:
         rows = [
@@ -53,28 +55,29 @@ class MessageStore:
         if not rows:
             return 0
 
-        with self._connect() as connection:
-            connection.executemany(
-                """
-                INSERT INTO messages (
-                    source, message_id, date, author, text, url, reply_to, metadata_json
+        with closing(self._connect()) as connection:
+            with connection:
+                connection.executemany(
+                    """
+                    INSERT INTO messages (
+                        source, message_id, date, author, text, url, reply_to, metadata_json
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(source, message_id) DO UPDATE SET
+                        date = excluded.date,
+                        author = excluded.author,
+                        text = excluded.text,
+                        url = excluded.url,
+                        reply_to = excluded.reply_to,
+                        metadata_json = excluded.metadata_json,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    rows,
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(source, message_id) DO UPDATE SET
-                    date = excluded.date,
-                    author = excluded.author,
-                    text = excluded.text,
-                    url = excluded.url,
-                    reply_to = excluded.reply_to,
-                    metadata_json = excluded.metadata_json,
-                    updated_at = CURRENT_TIMESTAMP
-                """,
-                rows,
-            )
         return len(rows)
 
     def fetch_messages(self, source: str, start: str, end: str) -> list[Message]:
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
             cursor = connection.execute(
                 """
                 SELECT source, message_id, date, author, text, url, reply_to, metadata_json

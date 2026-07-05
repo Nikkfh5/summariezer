@@ -18,6 +18,7 @@ from .jsonl_ingest import load_jsonl_messages
 from .prompting import build_digest_prompt
 from .storage import MessageStore
 from .telegram_auth import login_telegram_user_session
+from .telegram_dialogs import list_telegram_dialogs
 from .telegram_ingest import fetch_telegram_messages
 
 
@@ -45,6 +46,11 @@ def main(argv: list[str] | None = None) -> int:
     login_tg.add_argument("--session", default="secrets/tg-reader")
     login_tg.add_argument("--api-id", type=int, required=True)
     login_tg.add_argument("--api-hash-env", default="TELEGRAM_API_HASH")
+
+    dialogs_tg = subparsers.add_parser("telegram-dialogs")
+    dialogs_tg.add_argument("--session", default="secrets/tg-reader")
+    dialogs_tg.add_argument("--api-id-env", default="TELEGRAM_API_ID")
+    dialogs_tg.add_argument("--api-hash-env", default="TELEGRAM_API_HASH")
 
     digest = subparsers.add_parser("digest")
     digest.add_argument("--source", required=True)
@@ -124,6 +130,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"authorized Telegram session at {args.session}")
         return 0
+
+    if args.command == "telegram-dialogs":
+        return _print_telegram_dialogs(
+            session_path=Path(args.session),
+            api_id_env=args.api_id_env,
+            api_hash_env=args.api_hash_env,
+        )
 
     if args.command == "deliver-telegram":
         return _deliver_telegram_from_file(
@@ -284,6 +297,31 @@ def _print_telegram_bot_updates(*, bot_token_env: str) -> int:
         username = chat.get("username")
         label = f" @{username}" if username else ""
         print(f"chat_id={chat_id} type={chat.get('type')} name={title}{label}")
+    return 0
+
+
+def _print_telegram_dialogs(
+    *,
+    session_path: Path,
+    api_id_env: str,
+    api_hash_env: str,
+) -> int:
+    api_id = os.environ.get(api_id_env)
+    api_hash = os.environ.get(api_hash_env)
+    if not api_id:
+        print(f"missing Telegram API id env var: {api_id_env}")
+        return 2
+    if not api_hash:
+        print(f"missing Telegram API hash env var: {api_hash_env}")
+        return 2
+    dialogs = list_telegram_dialogs(
+        session_path=session_path,
+        api_id=int(api_id),
+        api_hash=api_hash,
+    )
+    for dialog in dialogs:
+        username = f" @{dialog.username}" if dialog.username else ""
+        print(f"id={dialog.id} kind={dialog.kind} title={dialog.title}{username}")
     return 0
 
 
