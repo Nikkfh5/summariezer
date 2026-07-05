@@ -8,36 +8,39 @@ from .models import Message
 
 async def fetch_telegram_messages(
     *,
-    session_path: Path,
+    session_path: Path | str,
     api_id: int,
     api_hash: str,
     chat: str,
     source: str,
     start: datetime,
     end: datetime,
+    client_factory: type | None = None,
 ) -> list[Message]:
-    try:
-        from telethon import TelegramClient
-    except ImportError as exc:
-        raise RuntimeError(
-            "Telegram ingestion requires the optional dependency: "
-            "python3 -m pip install 'summariezer[telegram]'"
-        ) from exc
+    if client_factory is None:
+        try:
+            from telethon import TelegramClient
+        except ImportError as exc:
+            raise RuntimeError(
+                "Telegram ingestion requires the optional dependency: "
+                "python3 -m pip install 'summariezer[telegram]'"
+            ) from exc
+        client_factory = TelegramClient
 
+    session_path = Path(session_path)
     session_path.parent.mkdir(parents=True, exist_ok=True)
     messages: list[Message] = []
-    async with TelegramClient(str(session_path), api_id, api_hash) as client:
+    async with client_factory(str(session_path), api_id, api_hash) as client:
         async for item in client.iter_messages(
             _coerce_chat_ref(chat),
             offset_date=end,
-            reverse=True,
         ):
             if item.date is None:
                 continue
             if item.date < start:
-                continue
-            if item.date >= end:
                 break
+            if item.date >= end:
+                continue
             text = item.message or ""
             if not text.strip():
                 continue
@@ -52,6 +55,7 @@ async def fetch_telegram_messages(
                     reply_to=str(item.reply_to_msg_id) if item.reply_to_msg_id else None,
                 )
             )
+    messages.reverse()
     return messages
 
 
