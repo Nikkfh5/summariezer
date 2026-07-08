@@ -86,7 +86,6 @@ Merge rules:
 - Deduplicate repeated topics across chunks.
 - Prefer HFT/microstructure/execution/infra signals over generic market chatter when the profile says so.
 - Keep uncertainty labels. Do not upgrade rumors into facts.
-- Include a short "what to verify or calculate next" section when useful.
 
 Chunk summaries:
 {summary_blocks}

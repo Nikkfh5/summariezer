@@ -43,7 +43,8 @@ Minimal fields for the first real Telegram run:
 - `--session`: local reader-account session path, usually `secrets/tg-reader`.
 - `--api-id`: numeric API id from `https://my.telegram.org/apps`.
 - `TELEGRAM_API_HASH`: API hash from the same page, exported as an environment variable.
-- `--profile`: `hft` for the HFT-first digest, or `generic` for general chats.
+- `--profile`: `hft` for the HFT-first digest, `ai` for AI-focused chats, or
+  `generic` for general chats.
 - `--start` / `--end`: digest window.
 
 Output channel:

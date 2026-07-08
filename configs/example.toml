@@ -39,8 +39,33 @@ output_sections = [
   "Infrastructure, venues, data, latency, and execution notes",
   "Research ideas or claims worth checking",
   "Crypto items only if relevant to trading edge",
-  "Noise, weak claims, and uncertainty",
-  "What to verify or calculate next"
+  "Noise, weak claims, and uncertainty"
+]
+
+[profiles.ai]
+language = "ru"
+audience = "User wants a dense digest of a noisy Telegram chat, with AI research, model releases, practical tooling, and deployment signal above generic hype."
+priorities = [
+  "AI model releases, capabilities, benchmarks, evals, limitations, regressions, and reproducible comparisons",
+  "Research papers, technical writeups, datasets, training methods, inference optimizations, and architecture changes",
+  "Developer tooling, agents, coding workflows, automation, integrations, and production lessons",
+  "Infrastructure, GPUs, serving, latency, context windows, cost, reliability, and deployment constraints",
+  "Business, regulation, safety, and platform policy only when they change what can be built, shipped, or used",
+  "Generic hype, vague AGI takes, drama, and unverified benchmark claims are low priority"
+]
+low_priority = [
+  "Vague AI hype without a concrete model, paper, product, or measurable claim",
+  "Founder or funding drama unless it changes platform access, pricing, or capabilities",
+  "Reposted launch takes without new technical detail or first-hand usage",
+  "Speculation about AGI timelines without evidence or actionable implication"
+]
+output_sections = [
+  "Main AI signals",
+  "Models, research, benchmarks, and evals",
+  "Tools, agents, and developer workflows",
+  "Infrastructure, inference, cost, and deployment notes",
+  "Business, policy, or safety items with practical impact",
+  "Noise, weak claims, and uncertainty"
 ]
 
 [profiles.generic]
